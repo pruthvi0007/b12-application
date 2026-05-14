@@ -1,4 +1,4 @@
-so this is the thing i wrote to apply to b12. the way they want you to apply is kind of clever - instead of emailing a resume you have to write a tiny script that posts your application to their endpoint, and run it from a ci pipeline so they can see the run logs.
+so this is the thing i wrote to apply to b12. the way they want you to apply is kind of clever, instead of emailing a resume you have to write a tiny script that posts your application to their endpoint, and run it from a ci pipeline so they can see the run logs.
 
 the actual work happens in src/submit.py. it reads my name/email/resume link from environment variables (the workflow sets them), grabs the current utc timestamp with millisecond precision and a Z suffix, builds the json payload, sorts the keys alphabetically and strips all the whitespace out, encodes it as utf-8 bytes, and then hmac-sha256-signs those exact bytes with the secret b12 published (hello-there-from-b12). the signature goes in an x-signature-256 header. then it posts to https://b12.io/apply/submission and prints whatever receipt comes back.
 
