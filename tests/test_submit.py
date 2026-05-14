@@ -1,5 +1,3 @@
-"""Verify canonical JSON + HMAC signing against the worked example in B12's spec."""
-
 import sys
 from pathlib import Path
 

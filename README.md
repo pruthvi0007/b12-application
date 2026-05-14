@@ -1,33 +1,15 @@
-# b12-application
+so this is the thing i wrote to apply to b12. the way they want you to apply is kind of clever - instead of emailing a resume you have to write a tiny script that posts your application to their endpoint, and run it from a ci pipeline so they can see the run logs.
 
-Submits a B12 job application via GitHub Actions.
+the actual work happens in src/submit.py. it reads my name/email/resume link from environment variables (the workflow sets them), grabs the current utc timestamp with millisecond precision and a Z suffix, builds the json payload, sorts the keys alphabetically and strips all the whitespace out, encodes it as utf-8 bytes, and then hmac-sha256-signs those exact bytes with the secret b12 published (hello-there-from-b12). the signature goes in an x-signature-256 header. then it posts to https://b12.io/apply/submission and prints whatever receipt comes back.
 
-The application script (`src/submit.py`) builds a canonical JSON payload,
-signs it with HMAC-SHA256, and POSTs it to `https://b12.io/apply/submission`.
+didn't bother with the requests library, just used urllib from the stdlib. no requirements file needed for the actual submission, only pytest for the tests.
 
-## How to run
+to run it: open the actions tab on github, find "submit b12 application", click run workflow. there's a little form with name/email/resume_link defaults filled in - tweak them if needed and hit the green button. when it finishes, click into the run, expand the submit application step, and scroll down. the receipt is printed inside a big = = = banner so it's hard to miss. copy that string and paste it into b12's confirmation form on their site. done.
 
-1. Edit `.github/workflows/submit.yml` — replace the `resume_link` default with your real LinkedIn / portfolio URL (or pass it as an input at run-time).
-2. Open the repo's **Actions** tab → **Submit B12 Application** → **Run workflow**.
-3. When the run completes, open the **Submit application** step and copy the value printed after `RECEIPT:`.
-4. Paste the receipt into B12's confirmation form.
+there are tests in tests/test_submit.py too. they take the worked example b12 gave in their spec (the one with the timestamp 2026-01-06T16:59:37.571Z and digest c5db257a56e3c258ec1162459c9a295280871269f4cf70146d2c9f1b52671d45) and verify our canonical_body + sign functions produce that exact hex string. the submit workflow runs the tests first - if they ever break, the submission never happens, which is the whole point. there's also a separate test.yml workflow that runs on every push, just so the green check stays visible on the repo.
 
-## What the script does
+if you want to run the tests locally just pip install pytest and run pytest -q from the repo root. takes like 30ms.
 
-- Generates an ISO 8601 UTC timestamp with millisecond precision.
-- Serializes the payload with sorted keys and no whitespace (`json.dumps(..., sort_keys=True, separators=(",", ":"))`).
-- Encodes the body as UTF-8 and signs it with HMAC-SHA256 (`X-Signature-256: sha256=<hex>`).
-- POSTs to B12 and prints the `receipt` from the response.
+one detail i liked - repository_link and action_run_link in the payload get auto-populated from github's context variables (github.server_url, github.repository, github.run_id), so the action_run_link in the post body always points to the exact ci run that did the submission. that felt important since b12 explicitly wants to click through and confirm the run actually happened.
 
-## Tests
-
-`tests/test_submit.py` verifies the canonical serialization and HMAC digest
-against the worked example in B12's spec
-(hex digest `c5db257a56e3c258ec1162459c9a295280871269f4cf70146d2c9f1b52671d45`).
-The submit workflow runs these tests before submitting; CI also runs them on
-every push.
-
-```bash
-pip install pytest
-pytest -q
-```
+if the script fails (network error, signature mismatch, b12 says no) it exits non-zero and the whole workflow goes red. if it succeeds the workflow goes green and the receipt is in the logs.

@@ -1,9 +1,3 @@
-"""POST a B12 job application submission, signed with HMAC-SHA256.
-
-Run via the GitHub Actions workflow at .github/workflows/submit.yml, which
-populates the required environment variables.
-"""
-
 from __future__ import annotations
 
 import hashlib
