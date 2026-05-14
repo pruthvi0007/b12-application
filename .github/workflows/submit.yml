@@ -14,7 +14,7 @@ on:
       resume_link:
         description: "URL to LinkedIn / resume / portfolio"
         required: true
-        default: "https://www.linkedin.com/in/pruthvi-rathod-07b56a138/"
+        default: "https://pruthvi0007.github.io/"
 
 jobs:
   submit:
