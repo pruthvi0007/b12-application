@@ -1,0 +1,42 @@
+name: Submit B12 Application
+
+on:
+  workflow_dispatch:
+    inputs:
+      name:
+        description: "Applicant name"
+        required: true
+        default: "Pruthvi"
+      email:
+        description: "Applicant email"
+        required: true
+        default: "r.pruthvi07@gmail.com"
+      resume_link:
+        description: "URL to LinkedIn / resume / portfolio"
+        required: true
+        default: "https://www.linkedin.com/in/pruthvi-rathod-07b56a138/"
+
+jobs:
+  submit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install test deps
+        run: pip install pytest
+
+      - name: Run tests (verifies signing matches spec)
+        run: pytest -q
+
+      - name: Submit application
+        env:
+          NAME: ${{ inputs.name }}
+          EMAIL: ${{ inputs.email }}
+          RESUME_LINK: ${{ inputs.resume_link }}
+          REPOSITORY_LINK: ${{ github.server_url }}/${{ github.repository }}
+          ACTION_RUN_LINK: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: python src/submit.py
